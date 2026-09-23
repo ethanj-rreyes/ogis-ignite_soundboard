@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KIBO pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F1ECFA; --surface:#FFFFFF; --line:#D6CCEC; --ink:#1B1530; --muted:#5B5180;
+  --accent:#1B1530; --backdrop:rgba(27,21,48,.45);
+  --p1:#FF7A59; --p2:#FFC83D; --p3:#44DDA0; --p4:#5AB0FF; --p5:#C98BFF; --p6:#FF6FA8;
+  --padink:#1B1530; --stop:#FF4F5E;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1B1530; --surface:#271F45; --line:#3D3368; --ink:#FBF3E4; --muted:#B9AEDA;
+    --accent:#FFC83D; --backdrop:rgba(8,5,20,.65); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1B1530; --surface:#271F45; --line:#3D3368; --ink:#FBF3E4; --muted:#B9AEDA;
+  --accent:#FFC83D; --backdrop:rgba(8,5,20,.65); color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; min-height:100%;
+  background:var(--bg); color:var(--ink);
+  font-family:"Bricolage Grotesque", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+.wrap{max-width:960px; margin:0 auto; padding:0 16px}
+.top{display:flex; align-items:center; gap:12px; padding-top:20px; padding-bottom:6px}
+h1{
+  flex:1; margin:0; min-width:0;
+  font-size:clamp(2rem,8vw,3.25rem); font-weight:800; line-height:1; letter-spacing:-.03em;
+  font-variation-settings:"opsz" 96;
+  border-radius:8px; overflow-wrap:anywhere;
+}
+h1:focus{outline:2px dashed var(--muted); outline-offset:4px}
+.btn{
+  font:inherit; font-weight:600; font-size:1rem;
+  border-radius:999px; padding:10px 18px;
+  border:2px solid var(--line); background:var(--surface); color:var(--ink);
+  cursor:pointer; touch-action:manipulation;
+}
+.btn[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.btn:focus-visible,.stop:focus-visible,.linkbtn:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.hint{margin:0 0 16px; color:var(--muted); font-size:.95rem; line-height:1.4}
+.linkbtn{font:inherit; font-weight:600; color:var(--ink); background:none; border:0; padding:0; text-decoration:underline; cursor:pointer}
+
+.grid{
+  display:grid; gap:12px;
+  grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+  margin-bottom:8px;
+}
+#boards{padding-bottom:110px}
+.sec{font-size:1.3rem; font-weight:800; letter-spacing:-.01em; margin:22px 0 10px}
+.sub{margin:-4px 0 12px; color:var(--muted); font-size:.92rem; line-height:1.4}
+@media (min-width:640px){ .grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px} }
+.pad{
+  position:relative; overflow:hidden;
+  aspect-ratio:6/5; width:100%;
+  display:flex; flex-direction:column; justify-content:space-between; align-items:flex-start;
+  padding:12px 12px 16px; text-align:left;
+  border:0; border-radius:22px;
+  background:var(--c); color:var(--padink);
+  font:inherit; cursor:pointer; touch-action:manipulation;
+  box-shadow:inset 0 -6px 0 rgba(0,0,0,.2);
+  transition:transform .06s ease, box-shadow .06s ease;
+  user-select:none; -webkit-user-select:none;
+}
+.pad:active{transform:translateY(3px); box-shadow:inset 0 -3px 0 rgba(0,0,0,.2)}
+.pad:focus-visible{outline:3px solid var(--ink); outline-offset:3px}
+.pad .emo{font-size:clamp(1.8rem,7vw,2.4rem); line-height:1}
+.pad .nm{position:relative; z-index:1; font-weight:700; font-size:clamp(.9rem,3.6vw,1.05rem); line-height:1.15; overflow-wrap:anywhere}
+.pad::after{
+  content:""; position:absolute; inset:0 auto 0 0; width:0;
+  background:rgba(255,255,255,.38); pointer-events:none;
+}
+.pad .txt{position:relative; z-index:1; display:block}
+.pad .cue{display:block; margin-top:3px; font-size:.8rem; font-weight:600; opacity:.78; line-height:1.2}
+.pad .num{position:absolute; top:10px; right:12px; font-weight:800; font-size:1rem; opacity:.5}
+.editing .pad .num{display:none}
+.pad.playing{outline:3px solid var(--ink); outline-offset:3px}
+.pad.playing:not(.indef)::after{animation:fill var(--dur,1s) linear var(--delay,0s) forwards}
+@keyframes fill{from{width:0}to{width:100%}}
+.pad .badge{
+  display:none; position:absolute; top:10px; right:10px;
+  width:30px; height:30px; border-radius:999px;
+  background:rgba(255,255,255,.6); place-items:center; font-size:.95rem;
+}
+.editing .pad:not(.add) .badge{display:grid}
+.pad.add{
+  background:transparent; color:var(--muted);
+  border:2px dashed var(--line); box-shadow:none;
+  justify-content:center; align-items:center; text-align:center; gap:6px;
+}
+.pad.add .emo{font-size:2rem; font-weight:400}
+
+.bar{
+  position:fixed; left:0; right:0; bottom:0; z-index:5;
+  background:var(--surface); border-top:2px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.bar .wrap{padding-top:10px; padding-bottom:10px}
+.bar .row{display:flex; align-items:center; gap:16px}
+.next{
+  flex:1; min-width:0; text-align:left; cursor:pointer; touch-action:manipulation;
+  font:inherit; background:var(--ink); color:var(--bg); border:0; border-radius:16px; padding:8px 14px;
+  box-shadow:inset 0 -5px 0 rgba(0,0,0,.25);
+}
+.next:active{transform:translateY(2px)}
+.next:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.next .lbl{display:block; font-size:.8rem; font-weight:600; opacity:.75}
+.next .nn{display:block; font-weight:800; font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.btn.icon{padding:0 14px; font-size:1.25rem; border-radius:16px}
+.stop{
+  flex:none; font:inherit; font-weight:800; font-size:1.1rem;
+  background:var(--stop); color:#1B1530; border:0; border-radius:16px;
+  padding:14px 22px; cursor:pointer; touch-action:manipulation;
+  box-shadow:inset 0 -5px 0 rgba(0,0,0,.2);
+}
+.stop:active{transform:translateY(2px); box-shadow:inset 0 -3px 0 rgba(0,0,0,.2)}
+.vol{flex:1; display:flex; align-items:center; gap:10px; color:var(--muted); font-weight:600; min-width:0}
+.vol input{flex:1; min-width:0; accent-color:var(--accent); height:32px}
+
+dialog{
+  border:0; border-radius:24px; padding:22px;
+  width:min(92vw,420px); max-height:88vh; overflow:auto;
+  background:var(--surface); color:var(--ink);
+}
+dialog::backdrop{background:var(--backdrop)}
+dialog h2{margin:0 0 16px; font-size:1.5rem; font-weight:800; letter-spacing:-.02em}
+.field{display:block; margin-bottom:14px}
+.field > span{display:block; font-weight:600; margin-bottom:6px}
+.field input[type=text],.field input[type=file]{
+  width:100%; font:inherit; font-size:16px;
+  padding:12px; border-radius:12px; border:2px solid var(--line);
+  background:var(--bg); color:var(--ink);
+}
+.field input:focus-visible{outline:3px solid var(--accent); outline-offset:1px}
+.swatches{display:flex; gap:10px; flex-wrap:wrap; border:0; padding:0; margin:0 0 18px}
+.swatches legend{font-weight:600; margin-bottom:6px; padding:0}
+.swatches input{position:absolute; opacity:0; width:1px; height:1px}
+.swatches label{width:40px; height:40px; border-radius:999px; background:var(--c); cursor:pointer; box-shadow:inset 0 -4px 0 rgba(0,0,0,.18)}
+.swatches input:checked + label{outline:3px solid var(--ink); outline-offset:3px}
+.swatches input:focus-visible + label{outline:3px dashed var(--accent); outline-offset:3px}
+.err{color:var(--stop); font-weight:600; margin:-4px 0 12px; min-height:1.2em}
+.actions{display:flex; gap:10px; flex-wrap:wrap}
+.actions .grow{flex:1}
+.btn.primary{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.btn.danger{border-color:var(--stop); color:var(--ink)}
+.btn.danger.armed{background:var(--stop); color:#1B1530}
+
+#toast{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(96px + env(safe-area-inset-bottom,0px)); z-index:10;
+  background:var(--ink); color:var(--bg); font-weight:600;
+  padding:10px 16px; border-radius:14px; max-width:min(90vw,440px); text-align:center;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion: reduce){
+  .pad,.stop,.next{transition:none}
+  .pad:active,.stop:active,.next:active{transform:none}
+  #toast{transition:none}
+}
+</style>
+</head>
+<body>
+<header class="wrap top">
+  <h1 id="title" contenteditable="true" spellcheck="false" aria-label="Soundboard name, tap to rename">KIBO pitch</h1>
+  <button class="btn" id="editBtn" aria-pressed="false">Edit</button>
+</header>
+<main class="wrap" id="main">
+  <p class="hint" id="hint">Tap a pad to play it, tap it again to stop. No sound on an iPhone? Switch off silent mode.</p>
+  <p class="hint" id="editNote" hidden>Tap a pad to change its name, icon or color, or to remove it. <button class="linkbtn" id="restore" hidden>Show hidden pads</button></p>
+  <div id="boards"></div>
+</main>
+
+<div class="bar">
+  <div class="wrap row">
+    <button class="stop" id="stopAll">Stop all</button>
+    <label class="vol"><span>Volume</span><input type="range" id="vol" min="0" max="1" step="0.01" value="0.9"></label>
+  </div>
+</div>
+
+<dialog id="sheet" aria-labelledby="sheetTitle">
+  <h2 id="sheetTitle">Add a sound</h2>
+  <label class="field" id="fileWrap"><span>Sound file</span><input type="file" id="fFile" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg"></label>
+  <label class="field"><span>Name</span><input type="text" id="fName" maxlength="40" autocomplete="off" placeholder="e.g. Team intro"></label>
+  <label class="field"><span>Icon (emoji)</span><input type="text" id="fEmoji" maxlength="12" autocomplete="off" placeholder="🔊"></label>
+  <fieldset class="swatches" id="swatches"><legend>Color</legend></fieldset>
+  <p class="err" id="fErr" role="alert"></p>
+  <div class="actions">
+    <button class="btn danger" id="fDanger">Remove pad</button>
+    <span class="grow"></span>
+    <button class="btn" id="fCancel">Cancel</button>
+    <button class="btn primary" id="fPrimary">Add pad</button>
+  </div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+          set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- audio engine ---------- */
+let ctx=null, master=null, noiseBuf=null;
+let vol=ls.get("vol",0.9);
+function ac(){
+  if(!ctx){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    ctx=new AC();
+    master=ctx.createGain(); master.gain.value=vol;
+    const comp=ctx.createDynamicsCompressor();
+    comp.threshold.value=-10; comp.ratio.value=4;
+    master.connect(comp).connect(ctx.destination);
+  }
+  if(ctx.state==="suspended") ctx.resume();
+  return ctx;
+}
+function gainNode(v){const g=ctx.createGain();g.gain.value=v===undefined?0:v;return g}
+function filt(type,f,q){const b=ctx.createBiquadFilter();b.type=type;b.frequency.value=f;b.Q.value=q||1;return b}
+function osc(type,f,t,stop){const o=ctx.createOscillator();o.type=type;o.frequency.setValueAtTime(f,t);o.start(t);o.stop(stop);return o}
+function env(g,t,peak,a,d){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(peak,0.0002),t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+d)}
+function noise(t,stop){
+  if(!noiseBuf){const len=ctx.sampleRate*2;noiseBuf=ctx.createBuffer(1,len,ctx.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1}
+  const s=ctx.createBufferSource();s.buffer=noiseBuf;s.loop=true;s.start(t,Math.random()*1.5);s.stop(stop);return s;
+}
+function burst(out,t,dur,peak,type,f,q){const n=noise(t,t+dur+.05);const fl=filt(type,f,q);const g=gainNode();env(g,t,peak,.002,dur);n.connect(fl).connect(g).connect(out)}
+function thump(out,t,f,peak){const o=osc("sine",f,t,t+.4);o.frequency.exponentialRampToValueAtTime(f*.45,t+.25);const g=gainNode();env(g,t,peak,.004,.3);o.connect(g).connect(out)}
+function beep(out,f,t,d,peak,type){const o=osc(type||"sine",f,t,t+d+.02);const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+.008);g.gain.setValueAtTime(peak,t+Math.max(.01,d-.02));g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(out)}
+function bell(out,f,t,d,peak){peak=peak||.35;[[1,1,1],[2.76,.35,.5],[5.4,.12,.4]].forEach(([m,a,dm])=>{const o=osc("sine",f*m,t,t+d+.05);const g=gainNode();env(g,t,peak*a,.005,d*dm);o.connect(g).connect(out)})}
+function brass(out,f,t,d){
+  const lp=filt("lowpass",600,1);lp.frequency.setValueAtTime(600,t);lp.frequency.linearRampToValueAtTime(3200,t+.06);lp.frequency.linearRampToValueAtTime(2000,t+d);
+  const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.16,t+.03);g.gain.setValueAtTime(.16,t+Math.max(.04,d-.06));g.gain.exponentialRampToValueAtTime(.0001,t+d+.08);
+  [1,1.004,.997].forEach(det=>osc("sawtooth",f*det,t,t+d+.12).connect(lp));lp.connect(g).connect(out);
+}
+function horn(out,t,d){
+  const lp=filt("lowpass",3500,.8);const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.02);g.gain.setValueAtTime(.18,t+d-.04);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  [466,587,698,932].forEach((f,i)=>{const o=osc("sawtooth",f*.94,t,t+d+.05);o.frequency.exponentialRampToValueAtTime(f,t+.08);o.detune.value=i%2?6:-6;o.connect(lp)});lp.connect(g).connect(out);
+}
+
+function pop(out,t,f,peak){const o=osc("sine",f,t,t+.15);o.frequency.exponentialRampToValueAtTime(f*1.6,t+.05);const g=gainNode();env(g,t,peak||.25,.004,.1);o.connect(g).connect(out)}
+function chord(out,freqs,t,d,peak,type){
+  const lp=filt("lowpass",1800,.5);const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+.35);g.gain.setValueAtTime(peak,t+d*.6);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  freqs.forEach(f=>[1,1.003].forEach(det=>osc(type||"triangle",f*det,t,t+d+.05).connect(lp)));lp.connect(g).connect(out);
+}
+function pluck(out,f,t,peak){const o=osc("triangle",f,t,t+.6);const g=gainNode();env(g,t,peak||.2,.003,.5);o.connect(g).connect(out)}
+function bone(out,f,t,d,vib){
+  const lp=filt("lowpass",500,2);lp.frequency.setValueAtTime(400,t);lp.frequency.linearRampToValueAtTime(1400,t+.12);lp.frequency.linearRampToValueAtTime(700,t+d);
+  const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.05);g.gain.setValueAtTime(.2,t+d-.08);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  [1,1.005].forEach(det=>{const o=osc("sawtooth",f*det,t,t+d+.05);
+    if(vib){const l=osc("sine",5,t,t+d);const a=gainNode(0);a.gain.setValueAtTime(0,t);a.gain.linearRampToValueAtTime(30,t+.4);l.connect(a).connect(o.detune);o.frequency.linearRampToValueAtTime(f*det*.97,t+d)}
+    o.connect(lp)});
+  lp.connect(g).connect(out);
+}
+
+function bubble(out,t,f,peak){const o=osc("sine",f,t,t+.16);o.frequency.exponentialRampToValueAtTime(f*2.3,t+.09);const g=gainNode();env(g,t,peak||.12,.005,.12);o.connect(g).connect(out)}
+function bubbles(out,t,D,n,peak){for(let i=0;i<n;i++)bubble(out,t+Math.random()*D,450+Math.random()*900,(peak||.1)*(.5+Math.random()*.5))}
+function panned(out,p){if(!ctx.createStereoPanner)return out;const s=ctx.createStereoPanner();s.pan.value=p;s.connect(out);return s}
+
+function echo(out,time,fb){const d=ctx.createDelay(2);d.delayTime.value=time;const f=gainNode(fb);const lp=filt("lowpass",2500,.7);const inp=gainNode(1);inp.connect(out);inp.connect(d);d.connect(lp).connect(f).connect(d);lp.connect(out);return inp}
+function fade(out,t,D,inT,outT){const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(1,t+inT);g.gain.setValueAtTime(1,t+D-outT);g.gain.exponentialRampToValueAtTime(.0001,t+D);g.connect(out);return g}
+
+const SOUNDS={
+  reveal(out,t){bubbles(out,t,1.3,16,.09);[1047,1319,1568,2093,2637].forEach((f,i)=>bell(out,f,t+i*.07,.9,.16));chord(out,[523,659,784,1047],t+.3,2.2,.08);burst(out,t,1.2,.06,"highpass",7000,.7);return 2.6},
+  glow(out,t){chord(out,[349,440,523,659],t,2.8,.1,"sine");bubbles(out,t+.2,1.6,6,.06);bell(out,1760,t+.4,1.5,.08);bell(out,2093,t+.9,1.5,.07);return 2.9},
+  clap(out,t){burst(out,t,.02,.25,"bandpass",3000,2);burst(out,t+.14,.06,.9,"highpass",1800,.7);thump(out,t+.14,420,.5);return .5},
+  pings(out,t){pop(out,t,880,.2);bell(out,1318,t+.25,.35,.18);bell(out,1760,t+.37,.5,.18);for(let i=0;i<7;i++)pop(out,t+.8+i*.22+Math.random()*.08,700+Math.random()*800,.18);return 2.7},
+  timeskip(out,t){bubbles(out,t+.2,1.4,10,.06);const s=[262,294,330,392,440,523,587,659,784,880,1047,1175,1319,1568];
+    s.forEach((f,i)=>pluck(out,f,t+i*.045,.16));s.slice().reverse().forEach((f,i)=>pluck(out,f,t+.65+i*.045,.13));
+    const n=noise(t,t+1.6);const bp=filt("bandpass",400,1);bp.frequency.setValueAtTime(400,t);bp.frequency.exponentialRampToValueAtTime(4000,t+.7);bp.frequency.exponentialRampToValueAtTime(500,t+1.5);
+    const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.15,t+.6);g.gain.exponentialRampToValueAtTime(.0001,t+1.5);n.connect(bp).connect(g).connect(out);return 2},
+  scratch(out,t){const n=noise(t,t+.55);const bp=filt("bandpass",800,3);const f=bp.frequency;
+    f.setValueAtTime(700,t);f.exponentialRampToValueAtTime(2600,t+.08);f.exponentialRampToValueAtTime(500,t+.2);f.exponentialRampToValueAtTime(2200,t+.3);f.exponentialRampToValueAtTime(300,t+.48);
+    const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.9,t+.02);g.gain.setValueAtTime(.9,t+.4);g.gain.exponentialRampToValueAtTime(.0001,t+.5);n.connect(bp).connect(g).connect(out);
+    const o=osc("sawtooth",180,t,t+.5);const of=o.frequency;of.exponentialRampToValueAtTime(700,t+.08);of.exponentialRampToValueAtTime(140,t+.2);of.exponentialRampToValueAtTime(600,t+.3);of.exponentialRampToValueAtTime(90,t+.48);
+    const lp=filt("lowpass",1200,1);const g2=gainNode();env(g2,t,.12,.01,.45);o.connect(lp).connect(g2).connect(out);return .6},
+  crickets(out,t){const chirp=(tt,f)=>{for(let k=0;k<3;k++)beep(out,f,tt+k*.045,.032,.06)};for(let c=0;c<6;c++){chirp(t+c*.55,4700);chirp(t+.27+c*.55+Math.random()*.05,4300)}return 3.4},
+  sad(out,t){bone(out,233,t,.45);bone(out,220,t+.5,.45);bone(out,208,t+1,.45);bone(out,196,t+1.5,1.5,true);return 3.1},
+  happy(out,t){bubbles(out,t,1.8,14,.08);[523,659,784,1047].forEach((f,i)=>bell(out,f,t+i*.12,1,.22));bell(out,1319,t+.5,1.4,.18);chord(out,[523,659,784],t+.45,2.4,.09);return 2.9},
+  memo(out,t){bubble(out,t,420,.16);bubble(out,t+.28,560,.14);bubble(out,t+.52,720,.13);bell(out,1568,t+.8,.6,.12);return 1.5},
+  warmth(out,t){chord(out,[392,494,587,740],t,2.6,.1,"sine");bell(out,2349,t+.3,1.4,.06);bell(out,2960,t+.55,1.4,.05);bubbles(out,t+.1,1.4,5,.06);return 2.7},
+  connect(out,t){bell(panned(out,-.7),1175,t,.7,.2);bell(panned(out,.7),1175,t+.2,.7,.2);bubbles(out,t+.5,1.3,12,.09);
+    [587,740,880,1175].forEach((f,i)=>bell(out,f,t+.7+i*.1,1,.14));chord(out,[587,740,880],t+.7,2,.08);return 2.9},
+  deepsea(out,t){const D=8;const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(1,t+1.5);g.gain.setValueAtTime(1,t+D-1.8);g.gain.exponentialRampToValueAtTime(.0001,t+D);g.connect(out);
+    const n=noise(t,t+D);const lp=filt("lowpass",350,.7);const lfo=osc("sine",.15,t,t+D);const amt=gainNode(150);lfo.connect(amt).connect(lp.frequency);const ng=gainNode(.35);n.connect(lp).connect(ng).connect(g);
+    [55,82.4,110].forEach((f,i)=>{const o=osc("sine",f,t,t+D);const og=gainNode([.12,.07,.04][i]);o.connect(og).connect(g)});
+    bubbles(g,t+.8,D-2,14,.07);return D},
+  phoneoff(out,t){const o=osc("sine",880,t,t+.7);o.frequency.exponentialRampToValueAtTime(180,t+.6);const g=gainNode();env(g,t,.2,.01,.6);const lp=filt("lowpass",2000,1);o.connect(lp).connect(g).connect(out);
+    burst(out,t+.62,.02,.2,"bandpass",2500,3);bubble(out,t+.85,380,.1);return 1.2},
+  waves(out,t){const D=12;const m=fade(out,t,D,1,1.5);const n=noise(t,t+D);const g=gainNode(.06);
+    for(let w=0;w<5;w++){const s=t+.3+w*2.4+Math.random()*.3;g.gain.setTargetAtTime(.55,s,.45);g.gain.setTargetAtTime(.07,s+1.2,.55)}
+    const lp=filt("lowpass",700,.6);const hp=filt("highpass",3200,.5);const hg=gainNode(.25);n.connect(g);g.connect(lp).connect(m);g.connect(hp).connect(hg).connect(m);return D},
+  bubbler(out,t){const D=10;const m=fade(out,t,D,1,1.5);const n=noise(t,t+D);const lp=filt("lowpass",220,.7);const ng=gainNode(.18);n.connect(lp).connect(ng).connect(m);
+    [60,120].forEach((f,i)=>{const o=osc("sine",f,t,t+D);const og=gainNode(i?.015:.03);o.connect(og).connect(m)});
+    for(let i=0;i<90;i++)bubble(m,t+.5+Math.random()*(D-1.5),800+Math.random()*1000,.03+Math.random()*.05);return D},
+  whale(out,t){const e=echo(out,.38,.45);const call=(s,a,b,c,d)=>{const lp=filt("lowpass",1200,.8);const g=gainNode();g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.18,s+.3);g.gain.setValueAtTime(.18,s+d-.4);g.gain.exponentialRampToValueAtTime(.0001,s+d);
+      const o=osc("triangle",a,s,s+d+.05);o.frequency.exponentialRampToValueAtTime(b,s+d*.45);o.frequency.exponentialRampToValueAtTime(c,s+d);
+      const l=osc("sine",4,s,s+d);const la=gainNode(18);l.connect(la).connect(o.detune);o.connect(lp).connect(g).connect(e)};
+    call(t,260,480,300,2.2);call(t+2.6,420,520,210,2.4);return 6.5},
+  splash(out,t){burst(out,t,.35,.5,"highpass",1500,.7);burst(out,t+.02,.5,.4,"bandpass",600,.8);thump(out,t,120,.4);bubbles(out,t+.25,1,12,.1);return 1.4},
+  sonar(out,t){const e=echo(out,.45,.45);const o=osc("sine",1480,t,t+1.3);const g=gainNode();env(g,t,.25,.005,1.2);o.connect(g).connect(e);return 3.2},
+  grow(out,t){bubble(out,t,380,.18);bubble(out,t+.15,520,.14);[784,988,1175,1568].forEach((f,i)=>bell(out,f,t+.35+i*.1,.9,.16));bubbles(out,t+.8,.8,6,.06);return 1.9},
+  applause(out,t){const D=4.5;for(let i=0;i<420;i++){const x=Math.random();const e=Math.min(1,x*6)*Math.min(1,(1-x)*2.2);burst(out,t+x*D,.025+Math.random()*.02,.05+.22*e*Math.random(),"bandpass",900+Math.random()*1800,1.2)}return D+.1}
+};
+
+const BUILTINS=[
+  ["k-reveal","KIBO reveal","“…we bring you KIBO”","✨",5,"reveal","skit"],
+  ["k-glow","Warm glow","“closeness and connection”","💞",6,"glow","skit"],
+  ["k-clap","Clapperboard","“Roll camera!”","🎬",2,"clap","skit"],
+  ["k-pings","Phone pings","“this is addicting”","📱",4,"pings","skit"],
+  ["k-timeskip","Time skip","“10 years later…”","⏳",5,"timeskip","skit"],
+  ["k-scratch","Record scratch","“Hey Ale-!”","💿",1,"scratch","skit"],
+  ["k-crickets","Crickets","Alex walks away","🦗",3,"crickets","skit"],
+  ["k-sad","Sad trombone","“But I'm so lonely…”","😢",4,"sad","skit"],
+  ["k-happy","Happy ending","“now she has more…”","🌅",2,"happy","skit"],
+  ["k-applause","Applause","Closing line","👏",6,"applause","skit"],
+  ["k-memo","Memo bubble","Small memos","🫧",4,"memo","kibo"],
+  ["k-warmth","Send Warmth","Glowing coral","🪸",1,"warmth","kibo"],
+  ["k-connect","Connect Moment","Both phones ping","🐟",3,"connect","kibo"],
+  ["k-deepsea","Deep Sea","Tank mood, ambient","🌊",5,"deepsea","kibo"],
+  ["k-phoneoff","Phone off","Phone-off mode","📴",2,"phoneoff","kibo"],
+  ["k-grow","Fish grows","Fish eats a memo","🐠",6,"grow","kibo"],
+  ["k-waves","Ocean waves","Gentle shoreline","🏖️",4,"waves","ocean"],
+  ["k-bubbler","Aquarium bubbler","Tank ambience","🫙",3,"bubbler","ocean"],
+  ["k-whale","Whale song","Deep and distant","🐋",5,"whale","ocean"],
+  ["k-splash","Fish splash","A fish jumps","💦",4,"splash","ocean"],
+  ["k-sonar","Sonar ping","Echo in the deep","📡",2,"sonar","ocean"]
+].map(([id,name,cue,emoji,color,fn,group])=>({id,name,cue,emoji,color,fn,group,builtin:true}));
+
+/* ---------- state ---------- */
+let custom=[];
+let overrides=ls.get("overrides",{});
+let hidden=new Set(ls.get("hidden",[]));
+let editing=false;
+const playing=new Map();
+const bufCache=new Map();
+let storageOK=false;
+
+function allPads(){
+  const b=BUILTINS.map(p=>Object.assign({},p,overrides[p.id]||{}));
+  return b.concat(custom);
+}
+function findPad(id){return allPads().find(p=>p.id===id)}
+
+/* ---------- IndexedDB for custom sounds ---------- */
+let db=null;
+function openDB(){return new Promise(res=>{try{const r=indexedDB.open("soundboard",1);r.onupgradeneeded=()=>r.result.createObjectStore("pads",{keyPath:"id"});r.onsuccess=()=>{db=r.result;res(true)};r.onerror=()=>res(false);r.onblocked=()=>res(false)}catch(e){res(false)}})}
+function store(mode){return db.transaction("pads",mode).objectStore("pads")}
+function dbReq(fn,fallback){return new Promise(res=>{if(!db)return res(fallback);try{const r=fn();r.onsuccess=()=>res(r.result===undefined?true:r.result);r.onerror=()=>res(fallback)}catch(e){res(fallback)}})}
+const dbAll=()=>dbReq(()=>store("readonly").getAll(),[]);
+const dbPut=p=>dbReq(()=>store("readwrite").put(p),false);
+const dbDel=id=>dbReq(()=>store("readwrite").delete(id),false);
+
+function decode(ab){return new Promise((res,rej)=>{try{const r=ctx.decodeAudioData(ab,res,rej);if(r&&r.then)r.then(res,rej)}catch(e){rej(e)}})}
+async function getBuf(p){
+  if(bufCache.has(p.id))return bufCache.get(p.id);
+  const b=await decode(p.data.slice(0));bufCache.set(p.id,b);return b;
+}
+
+/* ---------- playback ---------- */
+function padEl(id){return document.querySelector('.pad[data-id="'+CSS.escape(id)+'"]')}
+function mark(id){
+  const e=playing.get(id),el=padEl(id);if(!e||!el)return;
+  el.classList.remove("playing","indef");void el.offsetWidth;
+  if(e.dur){el.style.setProperty("--dur",e.dur+"s");el.style.setProperty("--delay",-((performance.now()-e.start)/1000)+"s")}
+  else el.classList.add("indef");
+  el.classList.add("playing");
+}
+function unmark(id){const el=padEl(id);if(el)el.classList.remove("playing","indef")}
+function finish(id,e){
+  if(playing.get(id)!==e)return;
+  playing.delete(id);clearTimeout(e.timer);
+  setTimeout(()=>{try{e.out.disconnect()}catch(_){}} ,300);
+  if(e.audio){try{URL.revokeObjectURL(e.audio.src)}catch(_){}}
+  unmark(id);
+}
+function stopPad(id){
+  const e=playing.get(id);if(!e)return;
+  playing.delete(id);clearTimeout(e.timer);
+  try{e.out.gain.setTargetAtTime(0,ctx.currentTime,.015)}catch(_){}
+  setTimeout(()=>{try{e.out.disconnect()}catch(_){}},200);
+  if(e.src){try{e.src.stop(ctx.currentTime+.1)}catch(_){}}
+  if(e.audio){e.audio.pause();try{URL.revokeObjectURL(e.audio.src)}catch(_){}}
+  unmark(id);
+}
+function stopAll(){Array.from(playing.keys()).forEach(stopPad)}
+async function playPad(id){
+  ac();
+  const p=findPad(id);if(!p)return;
+  const out=ctx.createGain();out.connect(master);
+  const e={out,start:performance.now(),dur:null,timer:null,src:null,audio:null};
+  playing.set(id,e);
+  if(p.fn){
+    e.dur=SOUNDS[p.fn](out,ctx.currentTime+.02);
+  }else{
+    try{
+      const buf=await getBuf(p);
+      if(playing.get(id)!==e)return;
+      const s=ctx.createBufferSource();s.buffer=buf;s.connect(out);s.start();
+      e.src=s;e.dur=buf.duration;e.start=performance.now();
+    }catch(err){
+      const a=new Audio(URL.createObjectURL(new Blob([p.data],{type:p.type||"audio/mpeg"})));
+      a.volume=vol;e.audio=a;a.onended=()=>finish(id,e);
+      try{await a.play()}catch(_){stopPad(id);toast("This file type can't play on this device. Try an MP3 or M4A.");return}
+      if(playing.get(id)!==e)return;
+      e.dur=isFinite(a.duration)?a.duration:null;e.start=performance.now();
+    }
+  }
+  mark(id);
+  if(e.dur)e.timer=setTimeout(()=>finish(id,e),e.dur*1000+150);
+}
+
+/* ---------- rendering ---------- */
+const boards=$("#boards");
+function visible(){return allPads().filter(p=>!hidden.has(p.id))}
+function padHTML(p){
+  return '<button class="pad" data-id="'+esc(p.id)+'" style="--c:var(--p'+(p.color||1)+')">'+
+    '<span class="emo" aria-hidden="true">'+esc(p.emoji||"🔊")+'</span>'+
+    '<span class="txt"><span class="nm">'+esc(p.name)+'</span>'+(p.cue?'<span class="cue">'+esc(p.cue)+'</span>':'')+'</span>'+
+    '<span class="badge" aria-hidden="true">✎</span></button>';
+}
+function render(){
+  const v=visible(),skit=v.filter(p=>p.group==="skit"),kibo=v.filter(p=>p.group==="kibo"),ocean=v.filter(p=>p.group==="ocean"),mine=v.filter(p=>!p.builtin);
+  let h="";
+  if(skit.length)h+='<section><h2 class="sec">Skit</h2><div class="grid">'+skit.map(p=>padHTML(p)).join("")+'</div></section>';
+  if(kibo.length)h+='<section><h2 class="sec">KIBO features</h2><p class="sub">One sound per feature, for the presentation and demos.</p><div class="grid">'+kibo.map(p=>padHTML(p)).join("")+'</div></section>';
+  if(ocean.length)h+='<section><h2 class="sec">Ocean and aquarium</h2><p class="sub">Longer ambient sounds. Play one quietly under a slide to set the mood.</p><div class="grid">'+ocean.map(p=>padHTML(p)).join("")+'</div></section>';
+  h+='<section><h2 class="sec">Your sounds</h2><div class="grid">'+mine.map(p=>padHTML(p)).join("")+
+     '<button class="pad add" id="addPad"><span class="emo" aria-hidden="true">+</span><span class="nm">Add a sound</span></button></div></section>';
+  boards.innerHTML=h;
+  playing.forEach((_,id)=>mark(id));
+  document.body.classList.toggle("editing",editing);
+  $("#hint").hidden=editing;$("#editNote").hidden=!editing;
+  $("#restore").hidden=!(editing&&hidden.size);
+  $("#restore").textContent="Show "+hidden.size+" hidden pad"+(hidden.size===1?"":"s");
+}
+boards.addEventListener("click",ev=>{
+  const b=ev.target.closest("button");if(!b)return;
+  if(b.id==="addPad")return openSheet(null);
+  const id=b.dataset.id;
+  if(editing)return openSheet(id);
+  if(playing.has(id))stopPad(id);else playPad(id);
+});
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2600)}
+
+/* ---------- sheet ---------- */
+const sheet=$("#sheet"),sw=$("#swatches");
+for(let i=1;i<=6;i++){
+  sw.insertAdjacentHTML("beforeend",'<input type="radio" name="color" id="c'+i+'" value="'+i+'"><label for="c'+i+'" style="--c:var(--p'+i+')"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Color '+i+'</span></label>');
+}
+let sheetId=null,dangerArmed=false,nextColor=1;
+function setColor(c){const r=$("#c"+c);if(r)r.checked=true}
+function getColor(){const r=sw.querySelector("input:checked");return r?+r.value:1}
+function openSheet(id){
+  sheetId=id;dangerArmed=false;$("#fErr").textContent="";
+  const d=$("#fDanger");d.classList.remove("armed");
+  if(id===null){
+    $("#sheetTitle").textContent="Add a sound";$("#fileWrap").hidden=false;$("#fFile").value="";
+    $("#fName").value="";$("#fEmoji").value="";setColor(nextColor);
+    $("#fPrimary").textContent="Add pad";d.hidden=true;
+  }else{
+    const p=findPad(id);if(!p)return;
+    $("#sheetTitle").textContent="Edit pad";$("#fileWrap").hidden=true;
+    $("#fName").value=p.name;$("#fEmoji").value=p.emoji||"";setColor(p.color||1);
+    $("#fPrimary").textContent="Save changes";d.hidden=false;
+    d.textContent=p.builtin?"Hide pad":"Remove pad";
+  }
+  sheet.showModal();
+}
+$("#fFile").addEventListener("change",()=>{
+  const f=$("#fFile").files[0];
+  if(f&&!$("#fName").value.trim())$("#fName").value=f.name.replace(/\.[^.]+$/,"").slice(0,40);
+});
+$("#fCancel").addEventListener("click",()=>sheet.close());
+$("#fPrimary").addEventListener("click",async()=>{
+  const name=$("#fName").value.trim(),emoji=$("#fEmoji").value.trim(),color=getColor();
+  if(sheetId===null){
+    const f=$("#fFile").files[0];
+    if(!f){$("#fErr").textContent="Choose a sound file first.";return}
+    if(f.size>25*1024*1024){$("#fErr").textContent="That file is over 25 MB. Pick a shorter clip.";return}
+    const data=await f.arrayBuffer();
+    const p={id:"c-"+Date.now(),name:name||"Untitled",emoji:emoji||"🔊",color,type:f.type,data,created:Date.now()};
+    custom.push(p);nextColor=color%6+1;
+    const saved=await dbPut(p);
+    if(ctx)getBuf(p).catch(()=>{});
+    sheet.close();render();
+    toast(saved?"Pad added":"Pad added. This browser isn't saving sounds, so it'll be gone when you close the page.");
+  }else{
+    const p=findPad(sheetId);
+    if(p.builtin){overrides[p.id]={name:name||p.name,emoji:emoji||p.emoji,color};ls.set("overrides",overrides)}
+    else{const c=custom.find(x=>x.id===p.id);c.name=name||c.name;c.emoji=emoji||"🔊";c.color=color;await dbPut(c)}
+    sheet.close();render();toast("Changes saved");
+  }
+});
+$("#fDanger").addEventListener("click",async()=>{
+  const p=findPad(sheetId);if(!p)return;
+  if(p.builtin){hidden.add(p.id);ls.set("hidden",Array.from(hidden));stopPad(p.id);sheet.close();render();toast("Pad hidden");return}
+  const d=$("#fDanger");
+  if(!dangerArmed){dangerArmed=true;d.classList.add("armed");d.textContent="Tap again to remove";return}
+  stopPad(p.id);custom=custom.filter(x=>x.id!==p.id);bufCache.delete(p.id);await dbDel(p.id);
+  sheet.close();render();toast("Pad removed");
+});
+
+/* ---------- controls ---------- */
+$("#editBtn").addEventListener("click",()=>{
+  editing=!editing;const b=$("#editBtn");
+  b.setAttribute("aria-pressed",String(editing));b.textContent=editing?"Done":"Edit";render();
+});
+$("#restore").addEventListener("click",()=>{hidden.clear();ls.set("hidden",[]);render()});
+$("#stopAll").addEventListener("click",stopAll);
+const volEl=$("#vol");volEl.value=vol;
+volEl.addEventListener("input",()=>{
+  vol=+volEl.value;ls.set("vol",vol);
+  if(master)master.gain.setTargetAtTime(vol,ctx.currentTime,.02);
+  playing.forEach(e=>{if(e.audio)e.audio.volume=vol});
+});
+const title=$("#title");
+title.textContent=ls.get("kiboTitle","KIBO pitch");document.title=title.textContent;
+title.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();title.blur()}});
+title.addEventListener("blur",()=>{const t=title.textContent.trim()||"KIBO pitch";title.textContent=t;document.title=t;ls.set("kiboTitle",t)});
+
+/* ---------- boot ---------- */
+(async()=>{
+  render();
+  storageOK=await openDB();
+  if(storageOK){custom=(await dbAll()).sort((a,b)=>a.created-b.created);render()}
+  if(custom.length){try{ac();custom.forEach(p=>getBuf(p).catch(()=>{}))}catch(_){}}
+})();
+})();
+</script>
+</body>
+</html>
