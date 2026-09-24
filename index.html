@@ -360,8 +360,9 @@ const BUILTINS=[
   ["k-bubbler","Aquarium bubbler","Tank ambience","🫙",3,"bubbler","ocean"],
   ["k-whale","Whale song","Deep and distant","🐋",5,"whale","ocean"],
   ["k-splash","Fish splash","A fish jumps","💦",4,"splash","ocean"],
-  ["k-sonar","Sonar ping","Echo in the deep","📡",2,"sonar","ocean"]
-].map(([id,name,cue,emoji,color,fn,group])=>({id,name,cue,emoji,color,fn,group,builtin:true}));
+  ["k-sonar","Sonar ping","Echo in the deep","📡",2,"sonar","ocean"],
+  ["u-song", "New Song", "Uploaded song", "🎵", 1, null, "music", "song.mp3"]
+].map(([id,name,cue,emoji,color,fn,group,url])=>({id,name,cue,emoji,color,fn,group,url,builtin:true}));
 
 /* ---------- state ---------- */
 let custom=[];
@@ -390,7 +391,14 @@ const dbDel=id=>dbReq(()=>store("readwrite").delete(id),false);
 function decode(ab){return new Promise((res,rej)=>{try{const r=ctx.decodeAudioData(ab,res,rej);if(r&&r.then)r.then(res,rej)}catch(e){rej(e)}})}
 async function getBuf(p){
   if(bufCache.has(p.id))return bufCache.get(p.id);
-  const b=await decode(p.data.slice(0));bufCache.set(p.id,b);return b;
+  let ab;
+  if(p.url){
+    const r=await fetch(p.url);
+    ab=await r.arrayBuffer();
+  }else{
+    ab=p.data.slice(0);
+  }
+  const b=await decode(ab);bufCache.set(p.id,b);return b;
 }
 
 /* ---------- playback ---------- */
@@ -435,7 +443,8 @@ async function playPad(id){
       const s=ctx.createBufferSource();s.buffer=buf;s.connect(out);s.start();
       e.src=s;e.dur=buf.duration;e.start=performance.now();
     }catch(err){
-      const a=new Audio(URL.createObjectURL(new Blob([p.data],{type:p.type||"audio/mpeg"})));
+      const src = p.url ? p.url : URL.createObjectURL(new Blob([p.data],{type:p.type||"audio/mpeg"}));
+      const a=new Audio(src);
       a.volume=vol;e.audio=a;a.onended=()=>finish(id,e);
       try{await a.play()}catch(_){stopPad(id);toast("This file type can't play on this device. Try an MP3 or M4A.");return}
       if(playing.get(id)!==e)return;
