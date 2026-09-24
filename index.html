@@ -276,7 +276,26 @@ function panned(out,p){if(!ctx.createStereoPanner)return out;const s=ctx.createS
 function echo(out,time,fb){const d=ctx.createDelay(2);d.delayTime.value=time;const f=gainNode(fb);const lp=filt("lowpass",2500,.7);const inp=gainNode(1);inp.connect(out);inp.connect(d);d.connect(lp).connect(f).connect(d);lp.connect(out);return inp}
 function fade(out,t,D,inT,outT){const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(1,t+inT);g.gain.setValueAtTime(1,t+D-outT);g.gain.exponentialRampToValueAtTime(.0001,t+D);g.connect(out);return g}
 
+function padChord(out,freqs,t,d,peak){const lp=filt("lowpass",1000,.5);const g=gainNode();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+1.2);g.gain.setValueAtTime(peak,t+d);g.gain.exponentialRampToValueAtTime(.0001,t+d+1.6);
+  freqs.forEach(f=>[.998,1.002].forEach(det=>osc("triangle",f*det,t,t+d+1.7).connect(lp)));lp.connect(g).connect(out)}
+function soft(out,f,t,peak){const o=osc("sine",f,t,t+1.3);const o2=osc("triangle",f*2,t,t+.5);const g=gainNode();env(g,t,peak,.005,1.1);const g2=gainNode();env(g2,t,peak*.25,.003,.3);o.connect(g).connect(out);o2.connect(g2).connect(out)}
+
 const SOUNDS={
+  music(out,t){const D=80,bar=10/3;const m=fade(out,t,D,3,6);const bus=gainNode(.8);bus.connect(m);
+    const P=[[146.83,220,329.63,369.99],[123.47,185,277.18,293.66],[98,146.83,185,246.94],[110,164.81,246.94,277.18]];
+    const B=[73.42,61.74,49,55];
+    const lp=filt("lowpass",2400,.5);lp.connect(bus);
+    for(let i=0;i<24;i++){const c=i===23?0:i%4;const s=t+i*bar;
+      padChord(bus,P[c],s,i===23?bar+2:bar,.035);
+      const bo=osc("sine",B[c],s,s+bar+1.5);const bg=gainNode();bg.gain.setValueAtTime(.0001,s);bg.gain.exponentialRampToValueAtTime(.12,s+.4);bg.gain.exponentialRampToValueAtTime(.0001,s+bar+1.2);bo.connect(bg).connect(bus);
+      if(i>=2&&i<=21){const notes=P[c].map(f=>f*2);const pat=[0,2,3,1,2,3],pos=[0,1,2,4,5,6];const pk=i>=19?.035:.05;
+        pos.forEach((p,k)=>{if(i<4&&k>2)return;soft(lp,notes[pat[k]],s+p*bar/8,pk)})}
+    }
+    [739.99,659.25,587.33,440,493.88,440,739.99,659.25].forEach((f,k)=>bell(lp,f,t+(6+2*k)*bar,2.5,.05));
+    bell(lp,587.33,t+23*bar+.2,4,.05);
+    bubbles(bus,t+2,D-8,26,.04);
+    const n=noise(t,t+D);const nl=filt("lowpass",380,.7);const ng=gainNode(.05);n.connect(nl).connect(ng).connect(bus);
+    return D},
   reveal(out,t){bubbles(out,t,1.3,16,.09);[1047,1319,1568,2093,2637].forEach((f,i)=>bell(out,f,t+i*.07,.9,.16));chord(out,[523,659,784,1047],t+.3,2.2,.08);burst(out,t,1.2,.06,"highpass",7000,.7);return 2.6},
   glow(out,t){chord(out,[349,440,523,659],t,2.8,.1,"sine");bubbles(out,t+.2,1.6,6,.06);bell(out,1760,t+.4,1.5,.08);bell(out,2093,t+.9,1.5,.07);return 2.9},
   clap(out,t){burst(out,t,.02,.25,"bandpass",3000,2);burst(out,t+.14,.06,.9,"highpass",1800,.7);thump(out,t+.14,420,.5);return .5},
@@ -320,6 +339,7 @@ const SOUNDS={
 };
 
 const BUILTINS=[
+  ["k-music","Kibō (demo music)","1:20 calm underscore","🎶",4,"music","music"],
   ["k-reveal","KIBO reveal","“…we bring you KIBO”","✨",5,"reveal","skit"],
   ["k-glow","Warm glow","“closeness and connection”","💞",6,"glow","skit"],
   ["k-clap","Clapperboard","“Roll camera!”","🎬",2,"clap","skit"],
@@ -436,9 +456,10 @@ function padHTML(p){
     '<span class="badge" aria-hidden="true">✎</span></button>';
 }
 function render(){
-  const v=visible(),skit=v.filter(p=>p.group==="skit"),kibo=v.filter(p=>p.group==="kibo"),ocean=v.filter(p=>p.group==="ocean"),mine=v.filter(p=>!p.builtin);
+  const v=visible(),music=v.filter(p=>p.group==="music"),skit=v.filter(p=>p.group==="skit"),kibo=v.filter(p=>p.group==="kibo"),ocean=v.filter(p=>p.group==="ocean"),mine=v.filter(p=>!p.builtin);
   let h="";
   if(skit.length)h+='<section><h2 class="sec">Skit</h2><div class="grid">'+skit.map(p=>padHTML(p)).join("")+'</div></section>';
+  if(music.length)h+='<section><h2 class="sec">Demo music</h2><p class="sub">An original 1:20 track for the demo video. Soft and sparse so the speaker stays on top. Start it with the video; it fades in and out on its own.</p><div class="grid">'+music.map(p=>padHTML(p)).join("")+'</div></section>';
   if(kibo.length)h+='<section><h2 class="sec">KIBO features</h2><p class="sub">One sound per feature, for the presentation and demos.</p><div class="grid">'+kibo.map(p=>padHTML(p)).join("")+'</div></section>';
   if(ocean.length)h+='<section><h2 class="sec">Ocean and aquarium</h2><p class="sub">Longer ambient sounds. Play one quietly under a slide to set the mood.</p><div class="grid">'+ocean.map(p=>padHTML(p)).join("")+'</div></section>';
   h+='<section><h2 class="sec">Your sounds</h2><div class="grid">'+mine.map(p=>padHTML(p)).join("")+
